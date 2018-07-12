@@ -1,0 +1,14 @@
+org 0x7c00
+bits 16
+
+mov ax, 0x41 ; define ax = 41 = A
+mov bx, ax ; joga o valor de ax em bx
+
+mov ah, 0x0e ; sub funcão da interrupcão 0x10
+
+int 0x10 ; e imprime
+
+ret ; retorno 
+
+times 510 - ($ -$$) db 0
+dw 0xaa55

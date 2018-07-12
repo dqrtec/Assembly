@@ -1,0 +1,43 @@
+org 0x7c00
+    bits 16
+
+    mov ax, 0x00
+    mov ds, ax 
+    cli
+
+start:
+    mov al, 0x13	;modo grÃ¡fico VGA = 320x200, 256 cores (1 byte determina a cor)
+    int 0x10
+
+    mov ax, 0xA000	;memÃ³ria de vÃ­deo
+    mov es, ax
+
+
+    mov ax, 0		;Preenche a tela com a paleta de cores repetidamente, com 1 cor por pixel
+    mov bx, 0
+.laco:			
+    mov di, bx
+    mov [es:di], al
+
+    inc ax
+    inc bx
+    
+    cmp bx, 64000
+    jne .laco
+
+
+    mov bl, 15		;lÃª caracteres digitados e coloca na tela (com a cor branca) atravÃ©s de interrupÃµes
+.lerchar:
+    mov ah, 0x00
+    int 0x16
+    mov ah, 0x0e    
+    int 0x10
+    jmp .lerchar
+
+fim:
+    hlt
+
+msg:
+    times 510 - ($-$$) db 0
+    dw 0xaa55
+

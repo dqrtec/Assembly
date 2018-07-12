@@ -1,0 +1,49 @@
+org 0x7c00
+bits 16
+
+mov ax, 0
+mov ds, ax
+
+inicio:
+cli
+mov cx,0
+mov si,ola
+call print
+
+mov si,hello
+call print
+
+hlt
+
+print:
+	push ax
+	push bx
+	push dx
+	
+	mov bx, 0xB800
+	mov es, bx
+	
+	mov dl, 0
+
+.loop:
+	lodsb
+	cmp al, 0
+	je .retorno
+	mov di, cx
+	mov [es:di],al
+	add cx, 1
+	mov di, cx
+	mov [es:di], dl
+	inc cx
+	inc dl
+	jmp .loop
+	
+.retorno:
+	pop bx
+	pop ax
+	ret
+	
+hello: db "hello world",0
+ola: db "ola mundo",0
+
+times 510 - ($ - $$) db 0

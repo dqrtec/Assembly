@@ -1,0 +1,105 @@
+Assembly em modo Real
+Estão disponibilizados apenas 64KB de Ram no modo real
+Configuração da Maquina Virtual
+-powered off
+-5mb
+-não precisa de HD
+-tira cd virtual
+-adicionar floppy(disquete) – Vazio
+Assembly x86 – NASM
+Código para o montador (primeiras linhas do código)
+org 0x7c00		     informa qual o endereço de memoria o código será montado
+bits 16			     configura o montador em modo real pois os registradores em modo real tem 16bits
+
+Código para o montador (ultimas linhas do código)
+hlt			     comando para parar o processador
+times 510 – ($-$$) db 0      preencher com 0’s oq não for utilizado pelos 510bytes 
+dw 0xaa55		     escrever 55AA nos últimos dois bytes  (fim padrão dos programas Assembly x86)
+
+Registradores
+O original Intel 8086 e 8088 tem quatorze registros de 16 bits. Quatro deles (AX, BX, CX, DX) são registradores de propósito geral, embora cada um possa ter uma finalidade adicional.
+Registradores no modo 32\64bits : eAx , eBx, eCx, eDx
+Registradores no modo 16bits :  Ax, Bx, Cx, Dx 
+Cada um pode ser acessado como dois bytes separados 
+AX = AH, AL		BX = BH, BL		CX = CH, CL		DX = DH, DL
+acumulador(variável)	base(apontador)		contador(loops) 		dados(IO e div e mult)
+Há dois registros de ponteiro: SP, que aponta para o topo da pilha e da BP (base pointer) que é usado para apontar para algum outro lugar na pilha, geralmente acima de variáveis locais. 
+Dois registros (SI e DI) são para a indexação de matriz (funções do processador).
+Quatro registradores de segmento 
+CS, DS, SS e ES são usados para formar um endereço de memória.
+BS - Segmento da pilha (equivalente ao registrador LV)
+CS - Segmento do Código
+DS - Segmento de Dados
+ES - Segmento com dados extra
+FS - Segmento com mais dados
+GS - Segmento com ainda mais dados
+SS - Segmento da Pilha (Stack)
+O registrador de flags contém sinalizadores como de proceder com tais flags, overflow de flag e underflow de flag.  
+IP - ponteiro de instrução - aponta para a próxima instrução que será obtida a partir da memória e depois executados.
+Na Intel 80286, três registros especiais contêm endereços da tabela descrita (GDTR, LDTR, IDTR), e um registo de quarta tarefa (TR).
+Funções 
+db – escreve no código
+cli – limpa instruções (procedimento de segurança)
+mov – atribui um valor a um registrador 
+mul – multiplicação
+div – divisão (dx deve estar zerado, pois guarda o resto da divisão -|- ax é o dividendo e recebe o quociente  )
+inc – incremento
+dec – decremento
+push – inserir na pilha	
+pop – retirar da pilha
+call – chamar uma linha
+ret – retorna o valor final de um método
+jmp – pule para tal linha
+je – pule se for igual
+jz – pule se for zero
+jne – pule se não for igual
+jnz – pule se não for zero
+cmp – comparar
+add – somar 
+out – escrever componente
+lodsb – incrementar si e jogar valor de si pala o al
+int – chamar interrupção
+
+Interrupções
+- Interrupção 0x10
+O BIOS normalmente configura um manipulador de interrupção de modo real neste vetor que fornece serviços de vídeo. Tais serviços incluem a configuração do modo de vídeo, caractere e string output, e primitivas de gráficos (leitura e escrita de pixels no modo gráfico).
+Para usar esta chamada, carregue AH com o número da subfunção desejada, carregue outros parâmetros necessários em outros registros e faça a chamada. INT 10h é bastante lento, muitos programas ignoram esta rotina do BIOS e acessam diretamente o hardware da tela. Definir o modo de vídeo, que é feito com pouca frequência, pode ser realizado usando o BIOS, enquanto o desenho de gráficos na tela em um jogo precisa ser feito rapidamente, de modo que o acesso direto à RAM de vídeo é mais apropriado do que fazer uma chamada do BIOS para cada pixel .
+
+Principais Métodos
+mov AH, 0x00 : Leia a tecla pressionada e guarde o byte do caractere pressionado em AL
+mov AH, 0x08 : Leia o caracter e o atributo na posição do cursor
+mov AH, 0x09 : Escreva personagem e atributo na posição do cursor
+mov AH, 0x0A : Escreva o caractere apenas na posição do cursor
+mov AH,0x 0e : Mostra o caractere no video (chamado método print)
+mov AL, 0x13 : Escreve string (modo gráfico VGA = 320x200, 256 cores (1 byte determina a cor)
+
+- Interrupção 0x16
+INT 16h, INT 16H ou INT 22 é uma abreviatura para a chamada de interrupção do BIOS 16hex, o 22º vetor de interrupção em um sistema de computador baseado em x86. O BIOS geralmente configura um manipulador de interrupção de modo real neste vetor que fornece serviços de teclado. Esta interrupção é responsável pelo controle do teclado do PC.
+Esta interrupção é responsável pela obtenção da funcionalidade básica do teclado, ou seja, é responsável pela coleta dos batimentos de teclas, pelo status do buffer do teclado, etc. A codificação padrão do teclado que oferece INT 16 h é um teclado americano. Para adaptar a codificação do INT 16h a outro tipo de teclado (por exemplo, um teclado hebraico) deve atender ao código de varredura da tecla pressionada e executar adequadamente para interpretar a chave que deseja.
+
+101 letras ou mais teclados, há algumas chaves para o INT 16h interpretando-as como chaves expandidas, que possuem um código de varredura diferente das teclas normais (por exemplo, pausa de chave).
+
+Principais Métodos
+mov AH, 0x00 : Leia o teclado
+mov AH, 0x01 : Obter o estado do buffer do teclado
+mov AH, 0x02 : Obter o estado do teclado
+mov AH, 0x03 : Estabeleça o fator de repetição
+
+- Interrupção 0x13
+INT 13h é uma abreviatura para a chamada de interrupção do BIOS 13hex, o 20º vetor de interrupção em um sistema computacional baseado em x86. Normalmente, o BIOS configura um manipulador de interrupção de modo real neste vetor que fornece serviços de leitura e gravação de disco rígido e disco rígido usando o endereçamento CHS (cylinder-head-sector).
+
+mov ah, 0x02 : ler setores
+mov al, 1         : quantidade de setores a serem lidos (1 setor)
+mov ch, 0        : cilindro (0)
+mov dh, 0        : cabeçote (0)
+mov cl, 2          : ler a partir de qual setor? (a partir do setor 2)
+mov bx, 0x7E00: endereço de memória onde gravar o(s) setor(es) lido(s)
+
+
+Endereço das memorias reservadas
+0x7c00 – endereço onde pode ser montado o programa assembly
+0x7e00 – endereço livre (já q o programa assembly termina de ser montado no endereço 0x7dff)
+0xA000 – endereço da memoria de vídeo(modo gráfico – guarda oq vai ser exibido na tela)
+0xB800 – endereço da memória de vídeo (para caracteres)
+
+

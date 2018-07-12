@@ -1,0 +1,284 @@
+Assembly:
+
+1º instalar virtual box para rodar máquina virtual. 1MB de memória é necessário. Não precisa de HD. Storage: somente adicionar Floopy Controller;
+
+Arquivo Assembly Inicial para fazer Nada:
+-------------- 
+org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+hlt (halt - para o processador)
+
+times 510 - ($-$$) db 0 (509 bytes 0 depois do byte do hlt, db = dado byte)
+dw 0xaa55 (Colocar esse byte no final do programa)
+
+-------------
+
+No prompt->$ nasm -f bin <nome do arquivo.txt> -o <nome do arquivo gerado.img>
+
+2º Sera gerado o arquivo. Clicamos em empty do disquete, escolhemos o arquivo gerado .img
+
+3º O que são os segmentos: um computador so consegue mapear 2^16 de memoria. Para solucionar esse problema, intel criou uma forma lógica de endereçamento em segmentos e índice de 16 bits cada.
+
+
+Arquivo Assembly Inicial para fazer Hello World:
+-------------- 
+org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+mov ax,0 (podemos mexer nos registradores ax, bx, cx,dx. Definimos um valor para o registrador ax)
+mov ds,ax (informamos pra bios em qual segmento estamos trabalhando, no caso 0. Usamos essa instrução pois não podemos jogar um valor diretamente em um registrador S)
+cli (limpa todas as interrupcoes que tenham sido chamadas no processador)
+
+mov si,msg (movendo para o source index o endereço do primeiro endereco do "hello world" ou msg)
+mov ah,0x0e
+
+.laco: 
+lodsb (pega o valor apontado no source index e joga no registrador 'a' na sua ordem baixa, ou al)
+cmp al,0 (compare o al com zero)
+jz fim (se for, pule pra fim)
+int 0x10
+jmp .laco (jump ou goto: mandamos voltar pro .laco)
+
+;mov al,'u' (movemos para o bit de baixa ordem do registrador a o caractere u) 
+;mov ah,0x0e (mexendo so no bit de alta ordem do registrador a)
+;int 0x10 (interrupcao 10: bibliotecas de saida de video)
+
+
+fim: hlt (halt - para o processador)
+
+msg: db "hello world" (msg: label, um "nome" pra um endereço de memória)
+
+times 510 - ($-$$) db 0 (509 bytes 0 depois do byte do hlt, db = dado byte)
+dw 0xaa55 (Colocar esse byte no final do programa)
+
+----------------------------------------------------------------------------------------------------------------------------------
+org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+mov ax,0 (podemos mexer nos registradores ax, bx, cx,dx. Definimos um valor para o registrador ax)
+mov ds,ax (informamos pra bios em qual segmento estamos trabalhando, no caso 0. Usamos essa instrução pois não podemos jogar um valor diretamente em um registrador S)
+cli (limpa todas as interrupcoes que tenham sido chamadas no processador)
+
+inicio:
+mov cx,0 (movendo 0 para o registrador geral, precisamos dele em 0 para as funções chamadas posteriomente)
+
+mov si,ola (si=source index, registrador onde guardamos fontes de dados)
+call print (chama essa funcao, nomeada la em baixo)
+
+mov si,hello (movemos para o si o endereco do hello)
+call print  (mandamos imprimir, análogo ao goto, a vantagem é que ele volta para o ponto onde ele foi chamado)
+htl (para o processador)
+
+
+
+
+
+;===Comeco do procedimento print
+print:
+	push ax (guardamos na pilha a posição de memoria do ax)
+	push bx (|| do bx)
+
+	mov bx, 0xB800 (0xB800 é o endereço da placa de vídeo)
+	mov es,bx (es=registrador de segmento extra, guardamos por enquanto o endereco de memoria da placa de vídeo)
+	
+
+.loop:
+	lodsb (pega o valor do registrador do source index e joga no al. Após, incrementa o si)
+	cmp al,0 (comparamos o valor do registrado al com o byte 0, ou seja, veremos se chegou ao fim da string)
+	je retorno (se for igual ao byte 0, pule oara o retorno)
+	mov di,cx  (agora, jogamos 0 no registrador de indice de dados)
+	mov [es:di],al (pega o endereço de es, contamos di posições, e jogamos al)
+	add cx, 2 (cx vai sendo incrementado de dois em dois, pois os caracteres na placa de video possuem dois bytes, um pra char e outro pra cor)
+	jmp .loop
+
+.retorno:
+	pop bx
+	pop ax
+	ret
+
+hello: db "hello wordl",0
+
+ola: 	db "ol",160,",mundo",0
+	times 510 - ($-$$) db 0 (comando do nasmi para contar quantos bytes ja foram colocados no programa até agora, serve para completarmos os 512 bytes)
+	dw 0xaa55
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------
+org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+mov ax,0 (podemos mexer nos registradores ax, bx, cx,dx. Definimos um valor para o registrador ax)
+mov ds,ax (informamos pra bios em qual segmento estamos trabalhando, no caso 0. Usamos essa instrução pois não podemos jogar um valor diretamente em um registrador S)
+cli (limpa todas as interrupcoes que tenham sido chamadas no processador)
+
+inicio:
+mov cx,0 (movendo 0 para o registrador geral, precisamos dele em 0 para as funções chamadas posteriomente)
+
+mov si,ola (si=source index, registrador onde guardamos fontes de dados)
+call print (chama essa funcao, nomeada la em baixo)
+
+mov si,hello (movemos para o si o endereco do hello)
+call print  (mandamos imprimir, análogo ao goto, a vantagem é que ele volta para o ponto onde ele foi chamado)
+htl (para o processador)
+
+
+
+
+
+;===Comeco do procedimento print
+print:
+	push ax (guardamos na pilha a posição de memoria do ax)
+	push bx (|| do bx)
+	push dx
+
+	mov bx, 0xB800 (0xB800 é o endereço da placa de vídeo)
+	mov es,bx (es=registrador de segmento extra, guardamos por enquanto o endereco de memoria da placa de vídeo)
+		
+	;cor:
+	mov dl, 0
+.loop:
+	lodsb (pega o valor do registrador do source index e joga no al. Após, incrementa o si)
+	cmp al,0 (comparamos o valor do registrado al com o byte 0, ou seja, veremos se chegou ao fim da string)
+	je retorno (se for igual ao byte 0, pule oara o retorno)
+	mov di,cx  (agora, jogamos 0 no registrador de indice de dados)
+	mov [es:di],al (pega o endereço de es, contamos di posições, e jogamos al)
+	add cx, 1 (cx vai sendo incrementado de dois em dois, pois os caracteres na placa de video possuem dois bytes, um pra char e outro pra cor. Aqui de um em um)
+	;poderiamos usar o inc cx, que incrementa 1
+	mov di, cx
+	mov [es:di], dl
+	inc cx
+	inc dl
+	jmp .loop
+
+.retorno:
+	pop bx
+	pop ax
+	ret
+
+hello: db "hello wordl",0
+
+ola: 	db "ol",160,",mundo",0
+	times 510 - ($-$$) db 0 (comando do nasmi para contar quantos bytes ja foram colocados no programa até agora, serve para completarmos os 512 bytes)
+	dw 0xaa55
+
+----------------------------------------------------------------------------------------------------------------------------------
+	org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+	bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+	mov ax,0 (podemos mexer nos registradores ax, bx, cx,dx. Definimos um valor para o registrador ax)
+	mov ds,ax (informamos pra bios em qual segmento estamos trabalhando, no caso 0. Usamos essa instrução pois não podemos jogar um valor diretamente em um 			registrador S)
+	cli (limpa todas as interrupcoes que tenham sido chamadas no processador)
+
+inicio:
+	mov ax,4356
+	call printi
+	jmp fim
+
+
+;===Comeco do procedimento printi de inteiros
+printi:
+	push ax (guardamos na pilha a posição de memoria do ax)
+	push cx
+	push bx
+	push dx
+	
+	mov cx,0
+	mov bx, 0xB800 (0xB800 é o endereço da placa de vídeo)
+	mov es,bx (es=registrador de segmento extra, guardamos por enquanto o endereco de memoria da placa de vídeo)
+
+	mov dx, 0
+	mov bx, 10
+
+.laco:
+	push dx
+	div bx	;resultado:  ax = ax/bx | dx = resto  SEMPRE O RESULTADO VAI PARA O AX E O RESTO PARA O DX, AUTOMATICAMENTE
+	push ax
+	
+	mov ax, dx
+	add ax,48
+	
+	mov di,cx
+	mov [es:di], al
+	add cx,2
+
+	pop ax
+	pop dx
+	cmp ax, 0
+	jne.laco
+		
+retorno:
+	pop dx
+	pop bx
+	pop cx 
+	pop ax
+	ret
+
+fim:	hlt
+	times 510 - ($-$$) db 0 (comando do nasmi para contar quantos bytes ja foram colocados no programa até agora, serve para completarmos os 512 bytes)
+	dw 0xaa55
+
+
+22/06
+----------------------------------------------------------------------------------------------------------------------------------
+	org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+	bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+	mov ax,0 (podemos mexer nos registradores ax, bx, cx,dx. Definimos um valor para o registrador ax)
+	mov ds,ax (informamos pra bios em qual segmento estamos trabalhando, no caso 0. Usamos essa instrução pois não podemos jogar um valor diretamente em um 			registrador S)
+	cli (limpa todas as interrupcoes que tenham sido chamadas no processador)
+
+inicio:
+	mov al, 0x13 (quando movemos esse byte para o registrador 'al' e executamos a interrupcao 10, inicializamos o modo grafico)
+	int 0x10
+
+	;mov bx, 0xB800 (MODO TEXTO)
+	mov bx, 0xA000 (MEMORIA DE VIDEO NO MODO GRAFICO)
+	mov es, bx
+
+	mov cx,0 (posicao)
+	mov dl,4
+	mov [es:di],dl (exibirá no primeiro pixel o byte 4)
+
+
+fim:	hlt
+	times 510 - ($-$$) db 0 (comando do nasmi para contar quantos bytes ja foram colocados no programa até agora, serve para completarmos os 512 bytes)
+	dw 0xaa55
+
+----------------------------------------------------------------------------------------------------------------------------------
+	org 0x7c00 (indica para o montador onde o programa ficará na memória quando executado)
+	bits 16 (indica ao montador quais os tamanhos dos registradores)
+
+	mov ax,0 (podemos mexer nos registradores ax, bx, cx,dx. Definimos um valor para o registrador ax)
+	mov ds,ax (informamos pra bios em qual segmento estamos trabalhando, no caso 0. Usamos essa instrução pois não podemos jogar um valor diretamente em um 			registrador S)
+	cli (limpa todas as interrupcoes que tenham sido chamadas no processador)
+
+inicio:
+	mov al, 0x13 (quando movemos esse byte para o registrador 'al' e executamos a interrupcao 10, inicializamos o modo grafico)
+	int 0x10
+
+	mov bx, 0xA000 (MEMORIA DE VIDEO NO MODO GRAFICO)
+	mov es, bx
+
+	mov cx,0 (posicao)
+	mov dx,0
+
+.laco
+	mov di,cx 
+	mov [es:di],dl (exibirá no primeiro pixel o byte 4)
+
+	inc cx
+	inc dx
+
+	cmp 64000
+	jne .laco
+
+fim:	hlt
+	times 510 - ($-$$) db 0 (comando do nasmi para contar quantos bytes ja foram colocados no programa até agora, serve para completarmos os 512 bytes)
+	dw 0xaa55
+
+
+
+
+

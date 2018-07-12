@@ -1,0 +1,26 @@
+org 0x7c00
+ 	bits 16
+    mov ax, 0
+    mov ds, ax;não podemos passar valores diretos para os reg de segmentos
+    cli
+    
+    inicio:
+    	mov si, msg
+    	mov ah, 0x0e; 0x0e é a instrução para imprimirr mensagem na tela, ah receb instruções
+    	
+   .laco:
+   		lodsb; pega valor de si, joga no al incrementa si
+   		cmp al,0;cmp comando de comparação
+   		jz fim; if, se for 0 vai para o fim
+   		int 0x10;interrupção de placa de video
+		jmp .laco;go to para o inicio do laço		
+    
+    fim:
+    	hlt
+    
+    msg: db "Hello World Buceta"
+   
+    times 510 - ($ -$$) db 0
+    
+  	dw 0xaa55
+ 
